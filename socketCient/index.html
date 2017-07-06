@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title></title>
+    <script src="js/mui.min.js"></script>
+    <link href="css/mui.min.css" rel="stylesheet"/>
+    <script type="text/javascript" charset="utf-8">
+      	mui.init();
+    </script>
+
+</head>
+<body>
+	<!-- -------------->
+	<header class="mui-bar mui-bar-nav">
+	    <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+	    <h1 class="mui-title">用户名</h1>
+	</header>
+	
+	<!-- -------------->
+	<div class="mui-content">
+		<div id= "bcid" style="height: 280px;">
+			
+		</div>
+	    <div id="popover" class="mui-popover">
+
+		</div>
+		<a href="#popover" id="openPopover" class="mui-btn mui-btn-primary mui-btn-block">打开弹出菜单</a>
+		<button class="mui-btn-block" id="scanqrcode">二维码扫描</button>
+		<button class="mui-btn-block" id="shake">开启摇一摇</button>
+	</div>
+	
+	<!-- -------------->
+	<nav class="mui-bar mui-bar-tab">
+	    <a class="mui-tab-item mui-active">
+	        <span class="mui-icon mui-icon-home"></span>
+	        <span class="mui-tab-label">首页</span>
+	    </a>
+	    <a class="mui-tab-item">
+	        <span class="mui-icon mui-icon-phone"></span>
+	        <span class="mui-tab-label">电话</span>
+	    </a>
+	    <a class="mui-tab-item">
+	        <span class="mui-icon mui-icon-email"></span>
+	        <span class="mui-tab-label">邮件</span>
+	    </a>
+	    <a class="mui-tab-item">
+	        <span class="mui-icon mui-icon-gear"></span>
+	        <span class="mui-tab-label">设置</span>
+	    </a>
+	</nav>
+	
+	<script type="text/javascript" src="js/jquery-1.11.0.js" ></script>
+    <script type="text/javascript" src="js/qrcode.js" ></script>
+	<script>
+		//WebSocket h5 新标准
+		var name = prompt("你的名字:");
+		$('.mui-title').html(name);
+		
+		var websocket = new WebSocket("ws://10.2.154.65:8080");
+		websocket.onopen = function(){
+			//只要连接到 服务器就会得到这个消息
+			console.log('已链接上socket服务器');
+		}
+		
+		websocket.onmessage = function(res){
+			//只要服务端发消息， 在这里就能得到这个消息
+			console.log(res);
+			
+				try{
+					var json = JSON.parse(res.data);
+					
+					if(json.from=="random"){
+						console.log("随机抽取的人---"+json.id);
+					}else{
+						alert(json.from+":"+"跟你打招呼了");
+					}
+					
+				}catch(e){
+					//生成二维码
+					
+					window.id = res.data;
+					jQuery('#popover').qrcode(id);
+				}
+			
+		}
+		
+		websocket.onerror = function(){
+			console.log("链接失败")
+		}
+		
+		websocket.onclose = function(){
+			//接口关闭时调用
+		}
+		
+		$('#scanqrcode').click(function(){
+			//5+框架里Barcode
+			var scan  =new plus.barcode.Barcode('bcid');//扫描控件
+			scan.start();//开始扫描
+			
+			scan.onmarked = function (type,res){
+				//扫到之后关闭二维码
+				scan.close();
+				
+				//扫到的二维码就是对话的id信息，之后可以做些操作。
+				//发送一些简单的信息
+				websocket.send(JSON.stringify({
+					from:name,
+					to:res,
+					id:id,
+					info:'扫到了你的二维码'
+				}))
+			}
+		})
+		
+		$("#shake").click(function(){
+			var watchId = 	plus.accelerometer.watchAcceleration( function ( a ) {
+//					console.log(a.xAxis+"-"+a.yAxis+"-"+a.zAxis);
+//					acc.innerText =  "x:" + a.xAxis + "\ny:" + a.yAxis + "\nz:" + a.zAxis;
+					if(Math.abs(a.xAxis)>4 && Math.abs(a.yAxis)>4 && Math.abs(a.zAxis)>4){
+						console.log("随机抽取一个人来聊天")
+						plus.accelerometer.clearWatch( watchId );
+						
+						websocket.send(JSON.stringify({
+							from:name,
+							to:"random",
+							id:id,
+						})) //发送消息给服务端
+					}
+				}, function ( e ) {
+					alert( "Acceleration error: " + e.message ); 
+				} ); 
+
+			})
+	</script>
+
+</body>
+
+</html>

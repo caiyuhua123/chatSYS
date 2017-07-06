@@ -1,0 +1,11 @@
+{
+	"index.html": {
+		"resources": [
+			"js/jquery-1.11.0.js",
+			"js/mui.min.js",
+			"js/qrcode.js",
+			"fonts/mui.ttf",
+			"css/mui.min.css"
+		]
+	}
+}
